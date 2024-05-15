@@ -4,7 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${env:PICO_SDK_PATH}/src/**"
+                "${env:PICO_SDK_PATH}/src/**",
+                "${env:PICO_SDK_PATH}/lib/tinyusb/src/**",
+                "${env:PICO_SDK_PATH}/lib/tinyusb/hw/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

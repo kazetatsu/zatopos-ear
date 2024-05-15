@@ -1,6 +1,3 @@
-// based on
-// https://www.denshi.club/parts/2021/04/raspberry-pi-pico-12-spi-apia-dmcp.html
-
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
@@ -8,6 +5,7 @@
 #include "hardware/gpio.h"
 #include "hardware/spi.h"
 #include "hardware/timer.h"
+#include "hardware/irq.h"
 
 #define PIN_SCK  18
 #define PIN_MOSI 19
@@ -148,6 +146,10 @@ void core1_entry() {
     }
 }
 
+void parse_cmd() {
+    printf("interrupted\n");
+}
+
 
 int main() {
     stdio_init_all();
@@ -160,6 +162,9 @@ int main() {
 
     char cmd;
     scanf("%c", &cmd);
+
+    irq_set_enabled(USBCTRL_IRQ, true);
+    irq_set_exclusive_handler(USBCTRL_IRQ, parse_cmd);
 
     multicore_launch_core1(core1_entry);
 
