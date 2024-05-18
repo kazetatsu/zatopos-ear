@@ -43,7 +43,10 @@ int main() {
     // Get ready to rx from host
     usb_start_transfer(usb_get_endpoint_configuration(EP1_OUT_ADDR), NULL, 64);
 
-    uint8_t buf[] = {0xca, 0xfe};
+    uint16_t data = 0xcafe;
+    uint8_t buf[2];
+    buf[0] = data;
+    buf[1] = data >> 8;
 
     // Everything is interrupt driven so just loop here
     while (1) {
