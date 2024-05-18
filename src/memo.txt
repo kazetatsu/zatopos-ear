@@ -1,0 +1,2 @@
+mutex と dev_lolevel は共存可
+mutex_enter ~ mutex_exit のブロック内で sleep_ms 使うと不具合？
