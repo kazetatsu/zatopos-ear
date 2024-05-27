@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Initialize the SDK
 pico_sdk_init()
 
-add_executable(main main.c)
+add_executable(main main2.c)
 
 target_link_libraries(main
     pico_stdlib hardware_gpio hardware_spi)

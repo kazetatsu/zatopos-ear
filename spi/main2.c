@@ -39,31 +39,31 @@ void setup_SPI(){
 }
 
 int readADC(uint8_t ch){
-    uint8_t writeData[] = {0b00000001, 0x00, 0x00};
+    uint8_t writeData[] = {0b11000000, 0x00, 0x00};
     switch(ch){
         case 0:
-            writeData[1] = 0b10000000;
+            writeData[0] = 0b11000000;
             break;
         case 1:
-            writeData[1] = 0b10010000;
+            writeData[0] = 0b11001000;
             break;
         case 2:
-            writeData[1] = 0b10100000;
+            writeData[0] = 0b11010000;
             break;
         case 3:
-            writeData[1] = 0b10110000;
+            writeData[0] = 0b11011000;
             break;
         case 4:
-            writeData[1] = 0b11000000;
+            writeData[0] = 0b11100000;
             break;
         case 5:
-            writeData[1] = 0b11010000;
+            writeData[0] = 0b11101000;
             break;
         case 6:
-            writeData[1] = 0b11100000;
+            writeData[0] = 0b11110000;
             break;
         case 7:
-            writeData[1] = 0b11110000;
+            writeData[0] = 0b11111000;
             break;
         default:
             return -1;
@@ -74,7 +74,7 @@ int readADC(uint8_t ch){
     spi_write_read_blocking(SPI_PORT, writeData, buffer, 3);
     cs_deselect();
 
-    return (buffer[1] & 0b00000011) << 8 | buffer[2];
+    return ((buffer[0] & 0b00000001) << 9) | (buffer[1] << 1) | (buffer[2] >> 7);
 }
 
 int main() {
