@@ -1,0 +1,4 @@
+sm_config_set_out_pins(&config, pin_base, pin_num)
+出力ピンを指定
+複数本指定したい場合...pin_base番のGPIOピンから連番でpin_num本
+例）pin_baseを11、pin_numを3にすると出力ピンはGPIO11~13
