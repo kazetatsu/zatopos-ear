@@ -14,6 +14,10 @@ static inline void mic_refresh() {
     pio_sm_set_enabled(pio, sm, true);
 }
 
+static inline void mic_stop() {
+    pio_sm_set_enabled(pio, sm, false);
+}
+
 void mic_init() {
     pio = pio0;
     offset = pio_add_program(pio, &mcp3008_program);
@@ -44,18 +48,22 @@ void mic_init() {
     mic_refresh();
 }
 
-void mic_read(uint16_t* data) {
+void mic_read(uint16_t data[][CH_NUM], uint8_t depth) {
     mic_refresh();
 
     uint32_t rbuf;
 
-    rbuf = pio_sm_get_blocking(pio, sm);
-    data[0] = (rbuf >> 20) & 0x03FF;
-    data[1] = (rbuf >> 10) & 0x03FF;
-    data[2] = rbuf & 0x03FF;
+    for(uint8_t i = 0; i < depth; ++i) {
+        rbuf = pio_sm_get_blocking(pio, sm);
+        data[i][0] = (rbuf >> 20) & 0x03FF;
+        data[i][1] = (rbuf >> 10) & 0x03FF;
+        data[i][2] = rbuf & 0x03FF;
 
-    rbuf = pio_sm_get_blocking(pio, sm);
-    data[3] = (rbuf >> 20) & 0x03FF;
-    data[4] = (rbuf >> 10) & 0x03FF;
-    data[5] = rbuf & 0x03FF;
+        rbuf = pio_sm_get_blocking(pio, sm);
+        data[i][3] = (rbuf >> 20) & 0x03FF;
+        data[i][4] = (rbuf >> 10) & 0x03FF;
+        data[i][5] = rbuf & 0x03FF;
+    }
+
+    mic_stop();
 }

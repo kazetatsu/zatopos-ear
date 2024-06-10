@@ -21,4 +21,12 @@ dloop:
     jmp y-- dloop  side 0b10
 
     jmp x-- loop   side 0b01  [3]
-    nop            side 0b01
+
+; sleep until next sampling
+    set x,15       side 0b01  [7]
+slp1:
+    set y,24       side 0b01  [7]
+slp2:
+    jmp y-- slp2   side 0b01  [7]
+    jmp x-- slp1   side 0b01  [7]
+    nop            side 0b01  [5]

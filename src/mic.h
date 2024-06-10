@@ -11,6 +11,6 @@
 #define CH_NUM 6
 
 void mic_init();
-void mic_read(uint16_t* data);
+void mic_read(uint16_t data[][CH_NUM], uint8_t depth);
 
 #endif
