@@ -1,3 +1,4 @@
+#include "hardware/dma.h"
 #include "hardware/gpio.h"
 #include "hardware/pio.h"
 
@@ -8,6 +9,8 @@ static PIO pio;
 static uint sm;
 static pio_sm_config cfg;
 static uint offset;
+static uint32_t buf[2 * SOUND_DEPTH];
+static int dma_ch;
 
 static inline void mic_refresh() {
     pio_sm_init(pio, sm, offset, &cfg);
@@ -66,4 +69,47 @@ void mic_read(uint16_t data[][CH_NUM], uint8_t depth) {
     }
 
     mic_stop();
+}
+
+void mic_start() {
+    dma_ch = dma_claim_unused_channel(true);
+    dma_channel_config c = dma_channel_get_default_config(dma_ch);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+    channel_config_set_dreq(&c, pio_get_dreq(pio, sm, false));
+
+    dma_channel_configure(
+        dma_ch,           // Channel to be configured
+        &c,               // configuration
+        buf,              // initial write address
+        &pio->rxf[sm],    // initial read address
+        2 * SOUND_DEPTH,  // number of transfers
+        false             // true <=> start immediately
+    );
+
+    mic_stop();
+    dma_channel_start(dma_ch);
+    mic_refresh();
+}
+
+void mic_get_sound_blocking(uint16_t sound[SOUND_DEPTH][CH_NUM]) {
+    dma_channel_wait_for_finish_blocking(dma_ch);
+
+    mic_stop();
+
+    dma_channel_cleanup(dma_ch);
+    dma_channel_unclaim(dma_ch);
+
+    uint32_t b;
+    for(uint8_t i = 0; i < SOUND_DEPTH; ++i) {
+        b = buf[2 * i];
+        sound[i][5] = (b >> 20) & 0x3FF;
+        sound[i][4] = (b >> 10) & 0x3FF;
+        sound[i][3] = b & 0x3FF;
+        b = buf[2 * i + 1];
+        sound[i][2] = (b >> 20) & 0x3FF;
+        sound[i][1] = (b >> 10) & 0x3FF;
+        sound[i][0] = b & 0x3FF;
+    }
 }
