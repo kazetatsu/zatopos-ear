@@ -1,4 +1,8 @@
 /**
+ * based on pico-examples/usb/devce/device_lowlevel.h
+ */
+
+/**
  * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -39,10 +43,8 @@ struct usb_device_configuration {
 
 #define EP0_IN_ADDR  (USB_DIR_IN  | 0)
 #define EP0_OUT_ADDR (USB_DIR_OUT | 0)
-// #define EP1_OUT_ADDR (USB_DIR_OUT | 1)
-#define EP1_IN_ADDR  (USB_DIR_IN  | 1)
+#define EP1_OUT_ADDR (USB_DIR_OUT | 1)
 #define EP2_IN_ADDR  (USB_DIR_IN  | 2)
-#define EP3_IN_ADDR  (USB_DIR_IN  | 3)
 
 // EP0 IN and OUT
 static const struct usb_endpoint_descriptor ep0_out = {
@@ -86,47 +88,26 @@ static const struct usb_interface_descriptor interface_descriptor = {
         .bDescriptorType    = USB_DT_INTERFACE,
         .bInterfaceNumber   = 0,
         .bAlternateSetting  = 0,
-        .bNumEndpoints      = 3,    // Interface has 3 endpoints
+        .bNumEndpoints      = 2,    // Interface has 3 endpoints
         .bInterfaceClass    = 0xff, // Vendor specific endpoint
         .bInterfaceSubClass = 0,
         .bInterfaceProtocol = 0,
         .iInterface         = 0
 };
 
-// static const struct usb_endpoint_descriptor ep1_out = {
-//         .bLength          = sizeof(struct usb_endpoint_descriptor),
-//         .bDescriptorType  = USB_DT_ENDPOINT,
-//         .bEndpointAddress = EP1_OUT_ADDR, // EP number 1, OUT from host (rx to device)
-//         .bmAttributes     = USB_TRANSFER_TYPE_BULK,
-//         .wMaxPacketSize   = 64,
-//         .bInterval        = 0
-// };
-
-// time
-static const struct usb_endpoint_descriptor ep1_in = {
+static const struct usb_endpoint_descriptor ep1_out = {
         .bLength          = sizeof(struct usb_endpoint_descriptor),
         .bDescriptorType  = USB_DT_ENDPOINT,
-        .bEndpointAddress = EP1_IN_ADDR, // EP number 1, IN from host (tx from device)
+        .bEndpointAddress = EP1_OUT_ADDR, // EP number 1, OUT from host (rx to device)
         .bmAttributes     = USB_TRANSFER_TYPE_BULK,
         .wMaxPacketSize   = 64,
         .bInterval        = 0
 };
 
-// temperature
 static const struct usb_endpoint_descriptor ep2_in = {
         .bLength          = sizeof(struct usb_endpoint_descriptor),
         .bDescriptorType  = USB_DT_ENDPOINT,
         .bEndpointAddress = EP2_IN_ADDR, // EP number 2, IN from host (tx from device)
-        .bmAttributes     = USB_TRANSFER_TYPE_BULK,
-        .wMaxPacketSize   = 64,
-        .bInterval        = 0
-};
-
-// data
-static const struct usb_endpoint_descriptor ep3_in = {
-        .bLength          = sizeof(struct usb_endpoint_descriptor),
-        .bDescriptorType  = USB_DT_ENDPOINT,
-        .bEndpointAddress = EP3_IN_ADDR, // EP number 3, IN from host (tx from device)
         .bmAttributes     = USB_TRANSFER_TYPE_BULK,
         .wMaxPacketSize   = 64,
         .bInterval        = 0
@@ -137,10 +118,8 @@ static const struct usb_configuration_descriptor config_descriptor = {
         .bDescriptorType = USB_DT_CONFIG,
         .wTotalLength    = (sizeof(config_descriptor) +
                             sizeof(interface_descriptor) +
-                        //     sizeof(ep1_out) +
-                            sizeof(ep1_in) +
-                            sizeof(ep2_in) +
-                            sizeof(ep3_in)),
+                            sizeof(ep1_out) +
+                            sizeof(ep2_in)),
         .bNumInterfaces  = 1,
         .bConfigurationValue = 1, // Configuration 1
         .iConfiguration = 0,      // No string
@@ -169,8 +148,6 @@ static const unsigned char *descriptor_strings[] = {
 
 void usb_init();
 void usb_send_data(uint8_t *buffer, uint16_t length);
-void usb_send_temperature(uint16_t temperature);
-void usb_send_time(uint32_t start_time, uint32_t finish_time);
-
+void usb_callback(uint8_t *buffer, uint16_t length);
 
 #endif

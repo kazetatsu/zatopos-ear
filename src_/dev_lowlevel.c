@@ -1,4 +1,8 @@
 /**
+ * based on pico-examples/usb/devce/device_lowlevel.c
+ */
+
+/**
  * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -33,10 +37,8 @@
 // later on
 void ep0_in_handler(uint8_t *buf, uint16_t len);
 void ep0_out_handler(uint8_t *buf, uint16_t len);
-// void ep1_out_handler(uint8_t *buf, uint16_t len);
-void ep1_in_handler(uint8_t *buf, uint16_t len);
+void ep1_out_handler(uint8_t *buf, uint16_t len);
 void ep2_in_handler(uint8_t *buf, uint16_t len);
-void ep3_in_handler(uint8_t *buf, uint16_t len);
 
 // Global device address
 static bool should_set_address = false;
@@ -70,21 +72,13 @@ static struct usb_device_configuration dev_config = {
                         // EP0 in and out share a data buffer
                         .data_buffer = &usb_dpram->ep0_buf_a[0],
                 },
-                // {
-                //         .descriptor = &ep1_out,
-                //         .handler = &ep1_out_handler,
-                //         // EP1 starts at offset 0 for endpoint control
-                //         .endpoint_control = &usb_dpram->ep_ctrl[0].out,
-                //         .buffer_control = &usb_dpram->ep_buf_ctrl[1].out,
-                //         // First free EPX buffer
-                //         .data_buffer = &usb_dpram->epx_data[0 * 64],
-                // },
                 {
-                        .descriptor = &ep1_in,
-                        .handler = &ep1_in_handler,
-                        .endpoint_control = &usb_dpram->ep_ctrl[0].in,
-                        .buffer_control = &usb_dpram->ep_buf_ctrl[1].in,
-                        // 1st free EPX buffer
+                        .descriptor = &ep1_out,
+                        .handler = &ep1_out_handler,
+                        // EP1 starts at offset 0 for endpoint control
+                        .endpoint_control = &usb_dpram->ep_ctrl[0].out,
+                        .buffer_control = &usb_dpram->ep_buf_ctrl[1].out,
+                        // First free EPX buffer
                         .data_buffer = &usb_dpram->epx_data[0 * 64],
                 },
                 {
@@ -94,14 +88,6 @@ static struct usb_device_configuration dev_config = {
                         .buffer_control = &usb_dpram->ep_buf_ctrl[2].in,
                         // 2nd free EPX buffer
                         .data_buffer = &usb_dpram->epx_data[1 * 64],
-                },
-                {
-                        .descriptor = &ep3_in,
-                        .handler = &ep3_in_handler,
-                        .endpoint_control = &usb_dpram->ep_ctrl[2].in,
-                        .buffer_control = &usb_dpram->ep_buf_ctrl[3].in,
-                        // 3rd free EPX buffer
-                        .data_buffer = &usb_dpram->epx_data[3 * 64],
                 }
         }
 };
@@ -562,32 +548,23 @@ void ep0_out_handler(uint8_t *buf, uint16_t len) {
     ;
 }
 
-// Device specific functions
-// void ep1_out_handler(uint8_t *buf, uint16_t len) {
-//     printf("RX %d bytes from host\n", len);
-//     // Send data back to host
-//     struct usb_endpoint_configuration *ep = usb_get_endpoint_configuration(EP2_IN_ADDR);
-//     usb_start_transfer(ep, buf, len);
-// }
+static struct usb_endpoint_configuration * ep_from_device;
+static struct usb_endpoint_configuration * ep_to_device;
 
-void ep1_in_handler(uint8_t *buf, uint16_t len) {
-    // printf("Sent %d bytes to host\n", len);
-    // // Get ready to rx again from host
-    // usb_start_transfer(usb_get_endpoint_configuration(EP1_OUT_ADDR), NULL, 64);
+// Device specific functions
+void ep1_out_handler(uint8_t *buf, uint16_t len) {
+    // printf("RX %d bytes from host\n", len);
+    // Send data back to host
+    // struct usb_endpoint_configuration *ep = usb_get_endpoint_configuration(EP2_IN_ADDR);
+    // usb_start_transfer(ep, buf, len);
+    usb_callback(buf, len);
 }
 
 void ep2_in_handler(uint8_t *buf, uint16_t len) {
     // printf("Sent %d bytes to host\n", len);
-    // // Get ready to rx again from host
-    // usb_start_transfer(usb_get_endpoint_configuration(EP1_OUT_ADDR), NULL, 64);
+    // Get ready to rx again from host
+    usb_start_transfer(ep_to_device, NULL, 64);
 }
-void ep3_in_handler(uint8_t *buf, uint16_t len) {
-    // printf("Sent %d bytes to host\n", len);
-    // // Get ready to rx again from host
-    // usb_start_transfer(usb_get_endpoint_configuration(EP1_OUT_ADDR), NULL, 64);
-}
-
-static struct usb_endpoint_configuration * ep_data;
 
 void usb_init() {
     usb_device_init();
@@ -597,29 +574,13 @@ void usb_init() {
         tight_loop_contents();
     }
 
-    ep_data = usb_get_endpoint_configuration(EP3_IN_ADDR);
+    ep_from_device = usb_get_endpoint_configuration(EP2_IN_ADDR);
+    ep_to_device = usb_get_endpoint_configuration(EP1_OUT_ADDR);
+
+    // Get ready to rx from host
+    usb_start_transfer(ep_to_device, NULL, 64);
 }
 
 void usb_send_data(uint8_t *buffer, uint16_t length) {
-    usb_start_transfer(ep_data, buffer, length);
-}
-
-void usb_send_temperature(uint16_t temperature) {
-    uint8_t buf[2];
-    buf[0] = temperature;
-    buf[1] = temperature >> 8;
-    usb_start_transfer(usb_get_endpoint_configuration(EP2_IN_ADDR), buf, 2);
-}
-
-void usb_send_time(uint32_t start_time, uint32_t finish_time) {
-    uint8_t buf[8];
-    buf[0] = start_time;
-    buf[1] = start_time >>  8;
-    buf[2] = start_time >> 16;
-    buf[3] = start_time >> 24;
-    buf[4] = finish_time;
-    buf[5] = finish_time >>  8;
-    buf[6] = finish_time >> 16;
-    buf[7] = finish_time >> 24;
-    usb_start_transfer(usb_get_endpoint_configuration(EP1_IN_ADDR), buf, 8);
+    usb_start_transfer(ep_from_device, buffer, length);
 }
