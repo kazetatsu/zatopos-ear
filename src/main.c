@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "pico/time.h"
 
 #include "mic.h"
 
@@ -7,19 +8,24 @@ int main() {
     stdio_init_all();
     mic_init();
 
-    char cmd;
-    uint16_t sound[SOUND_DEPTH][CH_NUM];
     while(1) {
-        scanf("%c", &cmd);
+        mic_swap_and_start();
+        uint32_t t = time_us_32();
+        printf("time:%08x\n", t);
 
-        mic_start();
-        mic_get_sound_blocking(sound);
-
+        uint32_t b;
         for(uint8_t i = 0; i < SOUND_DEPTH; ++i) {
-            printf("%02x,%03x", i, sound[i][0]);
-            for(uint8_t ch = 1; ch < CH_NUM; ++ch)
-                printf(",%03x", sound[i][ch]);
-            printf("\n");
+            b = mic_front_buffer[2 * i + 1];
+            printf("%03x,", b & 0x3FF);
+            printf("%03x,", (b >> 10) & 0x3FF);
+            printf("%03x,", (b >> 20) & 0x3FF);
+
+            b = mic_front_buffer[2 * i];
+            printf("%03x,",  b & 0x3FF);
+            printf("%03x,",  (b >> 10) & 0x3FF);
+            printf("%03x\n", (b >> 20) & 0x3FF);
         }
+
+        mic_wait_for_finish();
     }
 }

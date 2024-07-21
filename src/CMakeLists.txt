@@ -15,6 +15,7 @@ pico_sdk_init()
 add_executable(main)
 
 pico_generate_pio_header(main ${CMAKE_CURRENT_LIST_DIR}/mcp3008.pio)
+pico_generate_pio_header(main ${CMAKE_CURRENT_LIST_DIR}/mcp3008_6ch_full.pio)
 
 target_sources(main PRIVATE main.c mic.c)
 # target_sources(main PRIVATE mic_test.c mic.c)

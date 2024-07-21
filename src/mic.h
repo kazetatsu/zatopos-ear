@@ -17,8 +17,11 @@
 #define SOUND_DEPTH 64
 
 void mic_init();
-void mic_read(uint16_t data[][CH_NUM], uint8_t depth);
-void mic_start();
-void mic_get_sound_blocking(uint16_t sound[SOUND_DEPTH][CH_NUM]);
+void mic_swap_and_start();
+void mic_wait_for_finish();
+void mic_get_sound(uint16_t sound[SOUND_DEPTH][CH_NUM]);
+
+extern uint32_t *mic_front_buffer;
+extern uint32_t *mic_back_buffer;
 
 #endif
