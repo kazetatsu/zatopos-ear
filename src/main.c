@@ -23,8 +23,9 @@ int main() {
             b = mic_front_buffer[2 * i];
             printf("%03x,",  b & 0x3FF);
             printf("%03x,",  (b >> 10) & 0x3FF);
-            printf("%03x\n", (b >> 20) & 0x3FF);
+            printf("%03x.", (b >> 20) & 0x3FF);
         }
+        printf("\n");
 
         mic_wait_for_finish();
     }
