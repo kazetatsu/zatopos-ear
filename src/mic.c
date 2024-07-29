@@ -5,6 +5,7 @@
 #include "mcp3008.pio.h"
 // #include "mcp3008_6ch_full.pio.h"
 #include "mic.h"
+#include "common.h"
 
 static PIO pio;
 static uint pio_sm;
@@ -74,11 +75,15 @@ void mic_init() {
 
 void mic_swap_and_start() {
     if(buf_a_is_front) {
+        critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_b;
+        critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_a;
         buf_a_is_front = false;
     } else {
+        critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_a;
+        critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_b;
         buf_a_is_front = true;
     }

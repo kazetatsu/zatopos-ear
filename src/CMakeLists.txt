@@ -21,7 +21,7 @@ target_sources(main PRIVATE main.c mic.c)
 # target_sources(main PRIVATE mic_test.c mic.c)
 
 target_link_libraries(main
-    pico_stdlib
+    pico_stdlib pico_multicore pico_sync pico_time
     hardware_dma hardware_gpio hardware_pio)
 
 # enable usb output, disable uart output
