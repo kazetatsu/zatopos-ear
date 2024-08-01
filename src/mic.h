@@ -2,6 +2,10 @@
 #define _MIC_H
 
 #include "pico/types.h"
+#include "pico/sync.h"
+
+#define CH_NUM 6
+#define SOUND_DEPTH 64
 
 // #define PIN_MOSI  16 // to   Pico from MCP3008
 // #define PIN_CS    17
@@ -13,13 +17,12 @@
 #define PIN_SCLK  2
 #define PIN_MISO  4 // from xiao to   MCP3008
 
-#define CH_NUM 6
-#define SOUND_DEPTH 64
-
 void mic_init();
 void mic_swap_and_start();
 void mic_wait_for_finish();
 void mic_get_sound(uint16_t sound[SOUND_DEPTH][CH_NUM]);
+
+extern critical_section_t crit_sec_sound_buf;
 
 extern uint32_t *mic_front_buffer;
 extern uint32_t *mic_back_buffer;

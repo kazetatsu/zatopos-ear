@@ -5,7 +5,6 @@
 #include "pico/multicore.h"
 #include "pico/sync.h"
 
-#include "common.h"
 #include "mic.h"
 
 critical_section_t crit_sec_sound_buf;
