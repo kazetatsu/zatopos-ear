@@ -79,7 +79,7 @@ void usb_device_init() {
  * buffers have been sent / received. Notify each endpoint where this
  * is the case.
  */
-void usb_handle_buff_status() {
+static inline void usb_handle_buff_status() {
     uint32_t buf_status = usb_hw->buf_status;
     uint32_t remain = ~buf_status;
 

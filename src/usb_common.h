@@ -51,9 +51,9 @@ struct usb_endpoint_t {
 static uint8_t ep0_buf[64];
 
 // the functions called when USB controller finish transfer
-void ep0_in_handler();
-void ep0_out_handler();
-void ep1_in_handler();
+void ep0_in_handler(void);
+void ep0_out_handler(void);
+void ep1_in_handler(void);
 
 static struct usb_endpoint_t ep0_in = {
         .id = 0,

@@ -5,7 +5,6 @@
 #include "mcp3008.pio.h"
 // #include "mcp3008_6ch_full.pio.h"
 #include "mic.h"
-#include "common.h"
 
 static PIO pio;
 static uint pio_sm;

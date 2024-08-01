@@ -9,6 +9,8 @@
  * 
  */
 
+#include <string.h>
+
 // USB register definitions from pico-sdk
 #include "hardware/regs/usb.h"
 // USB hardware struct definitions from pico-sdk
@@ -36,7 +38,7 @@ void usb_bus_reset(void) {
 /**
  * @brief Sends a zero length status packet back to the host.
  */
-inline void usb_acknowledge_out_request(void) {
+static inline void usb_acknowledge_out_request(void) {
     usb_start_transfer(&ep0_in, NULL, 0);
 }
 
@@ -44,7 +46,7 @@ inline void usb_acknowledge_out_request(void) {
  * @brief Send device descriptor to host
  *
  */
-inline void usb_handle_device_descriptor(volatile struct usb_setup_packet *pkt) {
+static inline void usb_handle_device_descriptor(volatile struct usb_setup_packet *pkt) {
     const struct usb_device_descriptor *d = &device_descriptor;
     // Always respond with pid=DATA1
     ep0_in.pid = 1;
@@ -56,7 +58,7 @@ inline void usb_handle_device_descriptor(volatile struct usb_setup_packet *pkt) 
  *
  * @param pkt the setup packet received from the host.
  */
-inline void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt) {
+static inline void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt) {
     uint8_t *buf = &ep0_buf[0];
 
     // First request will want just the config descriptor
@@ -86,7 +88,7 @@ inline void usb_handle_config_descriptor(volatile struct usb_setup_packet *pkt) 
  * @param C string you would like to send to the USB host
  * @return the length of the string descriptor in EP0 buf
  */
-uint8_t usb_prepare_string_descriptor(const unsigned char *str) {
+static inline uint8_t usb_prepare_string_descriptor(const unsigned char *str) {
     // 2 for bLength + bDescriptorType + strlen * 2 because string is unicode. i.e. other byte will be 0
     uint8_t bLength = 2 + (strlen((const char *)str) * 2);
     static const uint8_t bDescriptorType = 0x03;
@@ -111,7 +113,7 @@ uint8_t usb_prepare_string_descriptor(const unsigned char *str) {
  *
  * @param pkt the setup packet from the host.
  */
-inline void usb_handle_string_descriptor(volatile struct usb_setup_packet *pkt) {
+static inline void usb_handle_string_descriptor(volatile struct usb_setup_packet *pkt) {
     uint8_t i = pkt->wValue & 0xff;
     uint8_t len = 0;
 
@@ -120,7 +122,7 @@ inline void usb_handle_string_descriptor(volatile struct usb_setup_packet *pkt) 
         memcpy(&ep0_buf[0], &lang_descriptor, len);
     } else {
         // Prepare fills in ep0_buf
-        len = usb_prepare_string_descriptor(&descriptor_strings[i - 1]);
+        len = usb_prepare_string_descriptor(descriptor_strings[i - 1]);
     }
 
     usb_start_transfer(&ep0_in, &ep0_buf[0], MIN(len, pkt->wLength));
@@ -133,7 +135,7 @@ inline void usb_handle_string_descriptor(volatile struct usb_setup_packet *pkt) 
  *
  * @param pkt the setup packet from the host.
  */
-inline void usb_set_device_address(volatile struct usb_setup_packet *pkt) {
+static inline void usb_set_device_address(volatile struct usb_setup_packet *pkt) {
     // Set address is a bit of a strange case because we have to send a 0 length status packet first with
     // address 0
     dev_addr = (pkt->wValue & 0xff);
@@ -149,7 +151,7 @@ inline void usb_set_device_address(volatile struct usb_setup_packet *pkt) {
  *
  * @param pkt the setup packet from the host.
  */
-inline void usb_set_device_configuration(volatile struct usb_setup_packet *pkt) {
+static inline void usb_set_device_configuration(volatile struct usb_setup_packet *pkt) {
     // Only one configuration so just acknowledge the request
     // printf("Device Enumerated\r\n");
     usb_acknowledge_out_request();
@@ -215,7 +217,7 @@ void usb_handle_setup_packet(void) {
  * @param buf the data that was sent
  * @param len the length that was sent
  */
-void ep0_in_callback() {
+void ep0_in_handler(void) {
     if (should_set_address) {
         // Set actual device address in hardware
         usb_hw->dev_addr_ctrl = dev_addr;
@@ -232,6 +234,6 @@ void ep0_in_callback() {
  * @param buf the data that was received
  * @param len the length that was received
  */
-void ep0_out_handler(uint8_t *buf, uint16_t len) {
+void ep0_out_handler(void) {
     ;
 }
