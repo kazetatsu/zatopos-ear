@@ -14,30 +14,45 @@
 #define _USB_VENDOR_SPECIFIC_H
 
 #include "common.h"
+#include "../sound.h"
 
-static uint8_t data[] = {0,1,2,3,4,5,6};
+#define USB_DATA_SIZE 60
+static uint8_t usb_sending_data[USB_DATA_SIZE];
+static uint16_t usb_sent_offset;
+
 static usb_endpoint_t *usb_ep_stat;
 static usb_endpoint_t *usb_ep_cmd;
 static usb_endpoint_t *usb_ep_data;
 
 void usb_ep_cmd_handler(uint8_t *buf, uint16_t len) {
-    uint32_t t = time_us_32();
-    uint8_t t_arr[4];
-    for (uint8_t i = 0; i < 4; i++) {
-        t_arr[i] = (t >> (i * 8)) & 0xff;
-    }
-    usb_start_transfer(usb_ep_stat, (uint8_t*)t_arr, 4);
-    printf("ep1<send time %08x\n", t);
+    uint32_t st = start_time;
+
+    usb_start_transfer(usb_ep_stat, (uint8_t*)&st, 4);
+    printf("ep1<send time %08x\n", st);
 }
 
 void usb_ep_stat_handler(uint8_t *buf, uint16_t len) {
-    usb_start_transfer(usb_ep_data, (uint8_t*)data, 7);
+    // sem_sound_buf.core.
+    memcpy(usb_sending_data, (uint8_t*)sound_buf, USB_DATA_SIZE);
+
+    usb_sent_offset = 0;
+
+    usb_start_transfer(usb_ep_data, usb_sending_data, USB_DATA_SIZE);
     printf("ep1< ep2 is sending data\n");
 }
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
-    usb_start_transfer(usb_ep_cmd, NULL, 1);
-    printf("ep1< wait cmd\n");
+    if (usb_sent_offset < SOUND_BUF_SIZE) {
+        uint16_t sending_len = MIN(SOUND_BUF_SIZE - usb_sent_offset, USB_DATA_SIZE);
+
+        memcpy(usb_sending_data, (uint8_t*)sound_buf + usb_sent_offset, sending_len);
+
+        usb_start_transfer(usb_ep_data, usb_sending_data, sending_len);
+        usb_sent_offset += USB_DATA_SIZE;
+    } else {
+        usb_start_transfer(usb_ep_cmd, NULL, 1);
+        printf("ep1< wait cmd\n");
+    }
 }
 
 static inline void usb_interface_init(void) {
