@@ -28,13 +28,11 @@ static usb_endpoint_t *usb_ep_data;
 
 void usb_ep_cmd_handler(uint8_t *buf, uint16_t len) {
     uint32_t st = start_time;
-    memcpy(usb_stat + 1, &st, 4);
-    usb_stat[0] = 0x10u;
 
     usb_sending_checker = sound_checker;
     usb_sent_offset = 0;
 
-    usb_start_transfer(usb_ep_data, (uint8_t*)usb_stat, 5);
+    usb_start_transfer(usb_ep_data, &st, 4);
 }
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
