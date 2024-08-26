@@ -24,8 +24,6 @@ void usb_handle_root(void) {
     uint32_t status = usb_hw->ints;
     uint32_t handled = 0u;
 
-    // printf("irq %08x\n", status);
-
     // Buffer status, one or more buffers have completed
     if (status & USB_INTS_BUFF_STATUS_BITS) {
         usb_handle_buff_status();

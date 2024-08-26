@@ -142,20 +142,3 @@ void mic_fill_sound_buf(void) {
     memcpy(sound_buf, sound_buf_copy_src, sizeof(uint16_t) * SOUND_BUF_LEN);
     critical_section_exit(&crit_sec_sound_buf);
 }
-
-// void mic_get_sound(uint16_t sound[SOUND_DEPTH][CH_NUM]) {
-//     dma_channel_cleanup(dma_ch);
-//     dma_channel_unclaim(dma_ch);
-
-//     uint32_t b;
-//     for(uint8_t i = 0; i < SOUND_DEPTH; ++i) {
-//         b = mic_front_buffer[2 * i];
-//         sound[i][5] = (b >> 20) & 0x3FF;
-//         sound[i][4] = (b >> 10) & 0x3FF;
-//         sound[i][3] = b & 0x3FF;
-//         b = mic_front_buffer[2 * i + 1];
-//         sound[i][2] = (b >> 20) & 0x3FF;
-//         sound[i][1] = (b >> 10) & 0x3FF;
-//         sound[i][0] = b & 0x3FF;
-//     }
-// }

@@ -35,7 +35,6 @@ void usb_ep_cmd_handler(uint8_t *buf, uint16_t len) {
     usb_sent_offset = 0;
 
     usb_start_transfer(usb_ep_data, (uint8_t*)usb_stat, 5);
-    // printf("ep1<send time %08x\n", st);
 }
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
@@ -47,11 +46,6 @@ void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
         }
         usb_start_transfer(usb_ep_data, (uint8_t*)sound_buf + usb_sent_offset, sending_len);
         usb_sent_offset += USB_DATA_SIZE;
-        // printf(
-        //     "ep2 < sent %03x,%03x,%03x,%03x,%03x,%03x ...\n",
-        //     usb_sending_data[0], usb_sending_data[1], usb_sending_data[2],
-        //     usb_sending_data[3], usb_sending_data[4], usb_sending_data[5]
-        // );
     } else {
         usb_start_transfer(usb_ep_cmd, NULL, 1);
         printf("ep1< wait cmd\n");

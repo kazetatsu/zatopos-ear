@@ -17,7 +17,6 @@ void mic_init();
 void mic_swap_and_start();
 void mic_wait_for_finish();
 void mic_fill_sound_buf(void);
-// void mic_get_sound(uint16_t sound[SOUND_DEPTH][CH_NUM]);
 
 extern uint32_t *mic_front_buffer;
 extern uint32_t *mic_back_buffer;

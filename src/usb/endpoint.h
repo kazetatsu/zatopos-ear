@@ -27,11 +27,6 @@ static inline void usb_check_and_call_ep_handler(usb_endpoint_t *ep, uint32_t bu
         usb_hw_clear->buf_status = bit;
         uint16_t len = *ep->buf_ctrl & USB_BUF_CTRL_LEN_MASK;
         uint8_t *buf = (uint8_t*)ep->data_buf;
-        // printf("| + ep%d_%s %d bytes data\n",
-        //         ep->id,
-        //         ep->is_direction_in ? "in sent" : "out received",
-        //         len
-        // );
         ep->handler(buf, len);
     }
 }
@@ -43,8 +38,6 @@ static inline void usb_check_and_call_ep_handler(usb_endpoint_t *ep, uint32_t bu
  */
 static inline void usb_handle_buff_status() {
     uint32_t buffers = usb_hw->buf_status;
-
-    // printf("+ buf stat %08x\n", buffers);
 
     usb_check_and_call_ep_handler(&usb_ep0_in, buffers);
     usb_check_and_call_ep_handler(&usb_ep0_out, buffers);
