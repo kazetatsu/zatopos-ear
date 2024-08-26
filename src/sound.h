@@ -10,6 +10,7 @@
 
 extern critical_section_t crit_sec_sound_buf;
 extern uint16_t sound_buf[SOUND_BUF_LEN];
+extern uint16_t sound_checker; // Increment at every writing sound_buf
 
 extern critical_section_t crit_sec_start_time;
 extern uint32_t start_time;

@@ -94,7 +94,7 @@ static inline void usb_endpoints_init(void) {
  * @param buf the data buffer to send. Only applicable if the endpoint is TX
  * @param len the length of the data in buf (this example limits max len to one packet - 64 bytes)
  */
-void usb_start_transfer(usb_endpoint_t *ep, uint8_t *buf, uint16_t len) {
+static inline void usb_start_transfer(usb_endpoint_t *ep, uint8_t *buf, uint16_t len) {
     // We are asserting that the length is <= 64 bytes for simplicity of the example.
     // For multi packet transfers see the tinyusb port.
     assert(len <= 64);
@@ -111,9 +111,7 @@ void usb_start_transfer(usb_endpoint_t *ep, uint8_t *buf, uint16_t len) {
 
     // Set pid and flip for next transfer
     val |= ep->pid ? USB_BUF_CTRL_DATA1_PID : USB_BUF_CTRL_DATA0_PID;
-    if (ep->transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS) {
-        ep->pid ^= 1u;
-    }
+    ep->pid ^= 1u;
 
     *ep->buf_ctrl = val;
 }

@@ -43,7 +43,7 @@ static const struct usb_device_descriptor usb_dev_desc = {
         .bNumConfigurations = 1    // One configuration
 };
 
-#define USB_NUM_ENABLED_ENDPOINTS 3
+#define USB_NUM_ENABLED_ENDPOINTS 2
 
 static const struct usb_endpoint_descriptor usb_ep_descs[USB_NUM_ENABLED_ENDPOINTS] = {
         {
@@ -61,14 +61,6 @@ static const struct usb_endpoint_descriptor usb_ep_descs[USB_NUM_ENABLED_ENDPOIN
                 .bmAttributes     = USB_TRANSFER_TYPE_BULK,
                 .wMaxPacketSize   = 64,
                 .bInterval        = 0
-        },
-        {
-                .bLength          = sizeof(struct usb_endpoint_descriptor),
-                .bDescriptorType  = USB_DT_ENDPOINT,
-                .bEndpointAddress = USB_DIR_IN | 2, // EP number 2, IN(device->host)
-                .bmAttributes     = USB_TRANSFER_TYPE_BULK,
-                .wMaxPacketSize   = 64,
-                .bInterval        = 0
         }
 };
 
@@ -77,7 +69,7 @@ static const struct usb_interface_descriptor usb_if_desc = {
         .bDescriptorType    = USB_DT_INTERFACE,
         .bInterfaceNumber   = 0,
         .bAlternateSetting  = 0,
-        .bNumEndpoints      = 3,    // Interface has 3 endpoints exclude ep0
+        .bNumEndpoints      = USB_NUM_ENABLED_ENDPOINTS, // Interface has 2 endpoints exclude ep0
         .bInterfaceClass    = 0xff, // Vendor specific endpoint
         .bInterfaceSubClass = 0xff,
         .bInterfaceProtocol = 0xff,

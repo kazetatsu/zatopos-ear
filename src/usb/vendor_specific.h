@@ -17,8 +17,10 @@
 #include "../sound.h"
 
 #define USB_DATA_SIZE 60
-static uint8_t usb_sending_data[USB_DATA_SIZE];
+static uint16_t usb_sending_checker;
 static uint16_t usb_sent_offset;
+
+static uint8_t usb_stat[USB_DATA_SIZE];
 
 static usb_endpoint_t *usb_ep_stat;
 static usb_endpoint_t *usb_ep_cmd;
@@ -26,29 +28,30 @@ static usb_endpoint_t *usb_ep_data;
 
 void usb_ep_cmd_handler(uint8_t *buf, uint16_t len) {
     uint32_t st = start_time;
+    memcpy(usb_stat + 1, &st, 4);
+    usb_stat[0] = 0x10u;
 
-    usb_start_transfer(usb_ep_stat, (uint8_t*)&st, 4);
-    printf("ep1<send time %08x\n", st);
-}
-
-void usb_ep_stat_handler(uint8_t *buf, uint16_t len) {
-    // sem_sound_buf.core.
-    memcpy(usb_sending_data, (uint8_t*)sound_buf, USB_DATA_SIZE);
-
+    usb_sending_checker = sound_checker;
     usb_sent_offset = 0;
 
-    usb_start_transfer(usb_ep_data, usb_sending_data, USB_DATA_SIZE);
-    printf("ep1< ep2 is sending data\n");
+    usb_start_transfer(usb_ep_data, (uint8_t*)usb_stat, 5);
+    // printf("ep1<send time %08x\n", st);
 }
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
     if (usb_sent_offset < SOUND_BUF_SIZE) {
         uint16_t sending_len = MIN(SOUND_BUF_SIZE - usb_sent_offset, USB_DATA_SIZE);
 
-        memcpy(usb_sending_data, (uint8_t*)sound_buf + usb_sent_offset, sending_len);
-
-        usb_start_transfer(usb_ep_data, usb_sending_data, sending_len);
+        if (usb_sending_checker != sound_checker) {
+            /**ここに送信しきれなかった旨表すステータスを返す処理 */
+        }
+        usb_start_transfer(usb_ep_data, (uint8_t*)sound_buf + usb_sent_offset, sending_len);
         usb_sent_offset += USB_DATA_SIZE;
+        // printf(
+        //     "ep2 < sent %03x,%03x,%03x,%03x,%03x,%03x ...\n",
+        //     usb_sending_data[0], usb_sending_data[1], usb_sending_data[2],
+        //     usb_sending_data[3], usb_sending_data[4], usb_sending_data[5]
+        // );
     } else {
         usb_start_transfer(usb_ep_cmd, NULL, 1);
         printf("ep1< wait cmd\n");
@@ -56,13 +59,11 @@ void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
 }
 
 static inline void usb_interface_init(void) {
-    usb_ep_stat = &usb_eps[0];
+    usb_ep_data = &usb_eps[0];
     usb_ep_cmd = &usb_eps[1];
-    usb_ep_data = &usb_eps[2];
 
-    usb_ep_stat->handler = &usb_ep_stat_handler;
-    usb_ep_cmd->handler = &usb_ep_cmd_handler;
     usb_ep_data->handler = &usb_ep_data_handler;
+    usb_ep_cmd->handler = &usb_ep_cmd_handler;
 
     usb_start_transfer(usb_ep_cmd, NULL, 1);
 
