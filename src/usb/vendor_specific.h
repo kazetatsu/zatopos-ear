@@ -16,6 +16,9 @@
 #include "common.h"
 #include "../sound.h"
 
+#define USB_WORKER_CMND_READ 0x00u
+#define USB_WORKER_CMND_READ_WITH_TIME 0x01u
+
 #define USB_DATA_SIZE 60
 static uint16_t usb_sending_checker;
 static uint16_t usb_sent_offset;
@@ -27,12 +30,25 @@ static usb_endpoint_t *usb_ep_cmd;
 static usb_endpoint_t *usb_ep_data;
 
 void usb_ep_cmd_handler(uint8_t *buf, uint16_t len) {
-    uint32_t st = start_time;
+    if (len == 1) {
+        switch (buf[0]) {
+            case USB_WORKER_CMND_READ:
+                usb_sending_checker = sound_checker;
+                usb_sent_offset = USB_DATA_SIZE;
+                usb_start_transfer(usb_ep_data, sound_buf, USB_DATA_SIZE);
+                break;
 
-    usb_sending_checker = sound_checker;
-    usb_sent_offset = 0;
+            case USB_WORKER_CMND_READ_WITH_TIME:
+                uint32_t st = start_time;
+                usb_sending_checker = sound_checker;
+                usb_sent_offset = 0;
+                usb_start_transfer(usb_ep_data, &st, 4);
+                break;
 
-    usb_start_transfer(usb_ep_data, &st, 4);
+            default:
+                break;
+        }
+    }
 }
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
