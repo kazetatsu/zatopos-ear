@@ -17,7 +17,7 @@ add_executable(main)
 pico_generate_pio_header(main ${CMAKE_CURRENT_LIST_DIR}/mcp3008.pio)
 pico_generate_pio_header(main ${CMAKE_CURRENT_LIST_DIR}/mcp3008_6ch_full.pio)
 
-target_sources(main PRIVATE main.c mic.c)
+target_sources(main PRIVATE main.c sound.c mic.c)
 # target_sources(main PRIVATE mic_test.c mic.c)
 
 target_link_libraries(main
@@ -25,8 +25,8 @@ target_link_libraries(main
     hardware_dma hardware_gpio hardware_pio)
 
 # enable usb output, disable uart output
-pico_enable_stdio_usb(main 1)
-pico_enable_stdio_uart(main 0)
+pico_enable_stdio_usb(main 0)
+pico_enable_stdio_uart(main 1)
 
 # create map/bin/hex file etc.
 pico_add_extra_outputs(main)

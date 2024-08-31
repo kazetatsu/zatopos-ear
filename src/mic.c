@@ -1,11 +1,16 @@
-#include "hardware/dma.h"
-#include "hardware/gpio.h"
-#include "hardware/pio.h"
+#include <string.h>
+
+#include <hardware/dma.h>
+#include <hardware/gpio.h>
+#include <hardware/pio.h>
+
+#include <pico/stdlib.h>
+#include <pico/sync.h>
 
 #include "mcp3008.pio.h"
 // #include "mcp3008_6ch_full.pio.h"
 #include "mic.h"
-#include "common.h"
+#include "sound.h"
 
 static PIO pio;
 static uint pio_sm;
@@ -15,8 +20,10 @@ static uint pio_offset;
 uint32_t *mic_front_buffer;
 uint32_t *mic_back_buffer;
 
-uint32_t buf_a[2 * SOUND_DEPTH];
-uint32_t buf_b[2 * SOUND_DEPTH];
+static uint32_t buf_a[SOUND_BUF_LEN];
+static uint32_t buf_b[SOUND_BUF_LEN];
+
+static uint16_t sound_buf_copy_src[SOUND_BUF_LEN];
 
 static bool buf_a_is_front;
 
@@ -75,15 +82,15 @@ void mic_init() {
 
 void mic_swap_and_start() {
     if(buf_a_is_front) {
-        critical_section_enter_blocking(&crit_sec_sound_buf);
+        // critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_b;
-        critical_section_exit(&crit_sec_sound_buf);
+        // critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_a;
         buf_a_is_front = false;
     } else {
-        critical_section_enter_blocking(&crit_sec_sound_buf);
+        // critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_a;
-        critical_section_exit(&crit_sec_sound_buf);
+        // critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_b;
         buf_a_is_front = true;
     }
@@ -109,19 +116,29 @@ void mic_wait_for_finish() {
     pio_sm_set_enabled(pio, pio_sm, false);
 }
 
-void mic_get_sound(uint16_t sound[SOUND_DEPTH][CH_NUM]) {
-    dma_channel_cleanup(dma_ch);
-    dma_channel_unclaim(dma_ch);
+void mic_fill_sound_buf(void) {
+    uint16_t r;
+    uint32_t data;
 
-    uint32_t b;
-    for(uint8_t i = 0; i < SOUND_DEPTH; ++i) {
-        b = mic_front_buffer[2 * i];
-        sound[i][5] = (b >> 20) & 0x3FF;
-        sound[i][4] = (b >> 10) & 0x3FF;
-        sound[i][3] = b & 0x3FF;
-        b = mic_front_buffer[2 * i + 1];
-        sound[i][2] = (b >> 20) & 0x3FF;
-        sound[i][1] = (b >> 10) & 0x3FF;
-        sound[i][0] = b & 0x3FF;
+    for (uint16_t i = 0; i < SOUND_DEPTH; i++) {
+        r = NUM_MIC_CHS * i;
+
+        data = mic_front_buffer[2 * i];
+        sound_buf_copy_src[r + 0] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_copy_src[r + 1] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_copy_src[r + 2] = data & 0x3ff;
+
+        data = mic_front_buffer[2 * i + 1];
+        sound_buf_copy_src[r + 3] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_copy_src[r + 4] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_copy_src[r + 5] = data & 0x3ff;
     }
+
+    critical_section_enter_blocking(&crit_sec_sound_buf);
+    memcpy(sound_buf, sound_buf_copy_src, sizeof(uint16_t) * SOUND_BUF_LEN);
+    critical_section_exit(&crit_sec_sound_buf);
 }
