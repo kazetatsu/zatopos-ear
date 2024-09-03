@@ -1,8 +1,21 @@
 #include "sound.h"
 
-critical_section_t crit_sec_sound_buf;
-uint16_t sound_buf[SOUND_BUF_LEN];
-uint16_t sound_check;
+static uint16_t sound_buf_a[SOUND_BUF_LEN];
+static uint16_t sound_buf_b[SOUND_BUF_LEN];
+static uint16_t sound_buf_c[SOUND_BUF_LEN];
 
-critical_section_t crit_sec_start_time;
-uint32_t start_time;
+uint8_t sound_front = 0;
+uint16_t *sound_bufs[SOUND_NUM_BUFS] = {
+    sound_buf_a,
+    sound_buf_b,
+    sound_buf_c
+};
+uint16_t sound_checker = 0;
+
+void sound_shift_front(void) {
+    uint8_t temp = sound_front;
+    temp++;
+    temp %= SOUND_NUM_BUFS;
+    sound_front = temp;
+    sound_checker++;
+}

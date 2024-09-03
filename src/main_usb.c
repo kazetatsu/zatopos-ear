@@ -14,12 +14,8 @@ void core1_entry() {
     while(1) {
         mic_swap_and_start();
 
-        uint32_t st = time_us_32();
-        critical_section_enter_blocking(&crit_sec_start_time);
-        start_time = st;
-        critical_section_exit(&crit_sec_start_time);
-
         mic_fill_sound_buf();
+        sound_shift_front();
 
         mic_wait_for_finish();
     }
@@ -28,8 +24,6 @@ void core1_entry() {
 int main() {
     stdio_init_all();
 
-    critical_section_init(&crit_sec_sound_buf);
-    critical_section_init(&crit_sec_start_time);
     multicore_launch_core1(core1_entry);
 
     usb_device_init();

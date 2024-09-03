@@ -7,12 +7,12 @@
 #define SOUND_DEPTH 64
 #define SOUND_BUF_LEN NUM_MIC_CHS * SOUND_DEPTH
 #define SOUND_BUF_SIZE 2 * SOUND_BUF_LEN
+#define SOUND_NUM_BUFS 3
 
-extern critical_section_t crit_sec_sound_buf;
-extern uint16_t sound_buf[SOUND_BUF_LEN];
+extern uint8_t sound_front;
+extern uint16_t *sound_bufs[SOUND_NUM_BUFS];
 extern uint16_t sound_checker; // Increment at every writing sound_buf
 
-extern critical_section_t crit_sec_start_time;
-extern uint32_t start_time;
+void sound_shift_front(void);
 
 #endif

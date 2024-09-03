@@ -23,8 +23,6 @@ uint32_t *mic_back_buffer;
 static uint32_t buf_a[SOUND_BUF_LEN];
 static uint32_t buf_b[SOUND_BUF_LEN];
 
-static uint16_t sound_buf_copy_src[SOUND_BUF_LEN];
-
 static bool buf_a_is_front;
 
 static int dma_ch;
@@ -82,15 +80,11 @@ void mic_init() {
 
 void mic_swap_and_start() {
     if(buf_a_is_front) {
-        // critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_b;
-        // critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_a;
         buf_a_is_front = false;
     } else {
-        // critical_section_enter_blocking(&crit_sec_sound_buf);
         mic_front_buffer = buf_a;
-        // critical_section_exit(&crit_sec_sound_buf);
         mic_back_buffer  = buf_b;
         buf_a_is_front = true;
     }
@@ -120,25 +114,26 @@ void mic_fill_sound_buf(void) {
     uint16_t r;
     uint32_t data;
 
+    uint8_t sw = sound_front;
+    sw++;
+    sw %= SOUND_NUM_BUFS;
+    uint16_t *sound_buf_write = sound_bufs[sw];
+
     for (uint16_t i = 0; i < SOUND_DEPTH; i++) {
         r = NUM_MIC_CHS * i;
 
-        data = mic_front_buffer[2 * i];
-        sound_buf_copy_src[r + 0] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_copy_src[r + 1] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_copy_src[r + 2] = data & 0x3ff;
-
         data = mic_front_buffer[2 * i + 1];
-        sound_buf_copy_src[r + 3] = data & 0x3ff;
+        sound_buf_write[r + 0] = data & 0x3ff;
         data >>= 10;
-        sound_buf_copy_src[r + 4] = data & 0x3ff;
+        sound_buf_write[r + 1] = data & 0x3ff;
         data >>= 10;
-        sound_buf_copy_src[r + 5] = data & 0x3ff;
-    }
+        sound_buf_write[r + 2] = data & 0x3ff;
 
-    critical_section_enter_blocking(&crit_sec_sound_buf);
-    memcpy(sound_buf, sound_buf_copy_src, sizeof(uint16_t) * SOUND_BUF_LEN);
-    critical_section_exit(&crit_sec_sound_buf);
+        data = mic_front_buffer[2 * i];
+        sound_buf_write[r + 3] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_write[r + 4] = data & 0x3ff;
+        data >>= 10;
+        sound_buf_write[r + 5] = data & 0x3ff;
+    }
 }
