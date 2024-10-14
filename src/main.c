@@ -17,6 +17,8 @@ void core1_entry() {
         mic_fill_sound_buf();
         sound_shift_front();
 
+        usb_start_send_sound();
+
         mic_wait_for_finish();
     }
 }
