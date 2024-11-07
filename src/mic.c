@@ -7,8 +7,7 @@
 #include <pico/stdlib.h>
 #include <pico/sync.h>
 
-#include "mcp3008.pio.h"
-// #include "mcp3008_6ch_full.pio.h"
+#include "mcp3002.pio.h"
 #include "mic.h"
 #include "sound.h"
 
@@ -33,9 +32,9 @@ void mic_init() {
      * PIO config
      */
     pio = pio0;
-    pio_offset = pio_add_program(pio, &mcp3008_program);
+    pio_offset = pio_add_program(pio, &mcp3002_program);
     pio_sm = pio_claim_unused_sm(pio, true);
-    pio_cfg = mcp3008_program_get_default_config(pio_offset);
+    pio_cfg = mcp3002_program_get_default_config(pio_offset);
 
     sm_config_set_clkdiv(&pio_cfg, 16.0f);
 

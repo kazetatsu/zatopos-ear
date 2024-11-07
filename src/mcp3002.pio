@@ -1,4 +1,4 @@
-.program mcp3008
+.program mcp3002
 .side_set 2
     set x,5        side 0b01  [3]
 loop:
