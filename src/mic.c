@@ -36,7 +36,7 @@ void mic_init() {
     pio_sm = pio_claim_unused_sm(pio, true);
     pio_cfg = mcp3002_program_get_default_config(pio_offset);
 
-    sm_config_set_clkdiv(&pio_cfg, 16.0f);
+    sm_config_set_clkdiv(&pio_cfg, 15.625f);
 
     // CS & SCLK
     sm_config_set_sideset_pins(&pio_cfg, PIN_CS);
@@ -72,7 +72,7 @@ void mic_init() {
 
     buf_a_is_front = true;
     // set dummy data
-    for(uint8_t i = 0; i < 2 * SOUND_DEPTH; ++i) {
+    for(uint16_t i = 0; i < 2 * SOUND_DEPTH; ++i) {
         buf_b[i] = 0;
     }
 }
@@ -115,7 +115,8 @@ void mic_fill_sound_buf(void) {
 
     uint8_t sw = sound_front;
     sw++;
-    sw %= SOUND_NUM_BUFS;
+    if (sw >= SOUND_NUM_BUFS)
+        sw = 0;
     uint16_t *sound_buf_write = sound_bufs[sw];
 
     for (uint16_t i = 0; i < SOUND_DEPTH; i++) {
