@@ -15,7 +15,8 @@ uint16_t sound_checker = 0;
 void sound_shift_front(void) {
     uint8_t temp = sound_front;
     temp++;
-    temp %= SOUND_NUM_BUFS;
+    if (temp > SOUND_NUM_BUFS)
+        temp = 0;
     sound_front = temp;
     sound_checker++;
 }

@@ -17,7 +17,7 @@
 #include "common.h"
 #include "../sound.h"
 
-#define USB_DATA_SIZE 60
+#define USB_DATA_SIZE 64
 
 static uint16_t *usb_sending_sound;
 static uint16_t usb_sending_checker = 0;
@@ -25,8 +25,6 @@ static uint16_t usb_sent_offset;
 
 static bool usb_need_send = false;
 static bool usb_is_sending_sound = false;
-
-static uint8_t usb_stat[USB_DATA_SIZE];
 
 static usb_endpoint_t *usb_ep_cmd;
 static usb_endpoint_t *usb_ep_data;
@@ -70,10 +68,8 @@ static inline void usb_start_send_sound(void) {
 
 void usb_ep_data_handler(uint8_t* buf, uint16_t len) {
     if (usb_sent_offset < SOUND_BUF_SIZE) {
-        uint16_t sending_len = MIN(SOUND_BUF_SIZE - usb_sent_offset, USB_DATA_SIZE);
-
-        usb_start_transfer(usb_ep_data, (uint8_t*)usb_sending_sound + usb_sent_offset, sending_len);
-        usb_sent_offset += sending_len;
+        usb_start_transfer(usb_ep_data, (uint8_t*)usb_sending_sound + usb_sent_offset, USB_DATA_SIZE);
+        usb_sent_offset += USB_DATA_SIZE;
     } else {
         printf("Finish sending data\n");
         usb_is_sending_sound = false;
@@ -87,8 +83,6 @@ static inline void usb_interface_init(void) {
 
     usb_ep_data->handler = &usb_ep_data_handler;
     usb_ep_cmd->handler = &usb_ep_cmd_handler;
-
-    memset(usb_stat, 0, USB_DATA_SIZE);
 
     usb_start_transfer(usb_ep_cmd, NULL, 2);
 
