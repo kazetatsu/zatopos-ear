@@ -1,0 +1,33 @@
+.program mcp3002
+.side_set 2
+
+; Sample
+    set x,1        side 0b01
+loop:
+
+; Request data
+    set pins,1     side 0b00  [1]
+    mov osr,x      side 0b10  [1]
+    set pins,1     side 0b00  [1]
+    nop            side 0b10  [1]
+    out pins,1     side 0b00  [1]
+    nop            side 0b10  [1]
+    set pins,1     side 0b00  [1]
+    nop            side 0b10  [1]
+; Wait data
+    set pins,0     side 0b00  [1]
+    set y,9        side 0b10  [1]
+; Receive data
+dloop:
+    nop            side 0b00  [1]
+    in pins,3      side 0b10
+    jmp y-- dloop  side 0b10
+
+    jmp x-- loop   side 0b01  [4]
+
+
+; Sleep until next sampling (Wait 69[clock])
+    set x,6        side 0b01  [7]
+sleep:
+    jmp x-- sleep  side 0b01  [7]
+    nop            side 0b01  [4]

@@ -7,10 +7,8 @@
 #include <pico/stdlib.h>
 #include <pico/sync.h>
 
-#include "mcp3008.pio.h"
-// #include "mcp3008_6ch_full.pio.h"
+#include "mcp3002.pio.h"
 #include "mic.h"
-#include "sound.h"
 
 static PIO pio;
 static uint pio_sm;
@@ -20,8 +18,8 @@ static uint pio_offset;
 uint32_t *mic_front_buffer;
 uint32_t *mic_back_buffer;
 
-static uint32_t buf_a[SOUND_BUF_LEN];
-static uint32_t buf_b[SOUND_BUF_LEN];
+static uint32_t buf_a[MIC_BUF_LEN];
+static uint32_t buf_b[MIC_BUF_LEN];
 
 static bool buf_a_is_front;
 
@@ -33,11 +31,11 @@ void mic_init() {
      * PIO config
      */
     pio = pio0;
-    pio_offset = pio_add_program(pio, &mcp3008_program);
+    pio_offset = pio_add_program(pio, &mcp3002_program);
     pio_sm = pio_claim_unused_sm(pio, true);
-    pio_cfg = mcp3008_program_get_default_config(pio_offset);
+    pio_cfg = mcp3002_program_get_default_config(pio_offset);
 
-    sm_config_set_clkdiv(&pio_cfg, 16.0f);
+    sm_config_set_clkdiv(&pio_cfg, 15.625f);
 
     // CS & SCLK
     sm_config_set_sideset_pins(&pio_cfg, PIN_CS);
@@ -53,10 +51,12 @@ void mic_init() {
     pio_gpio_init(pio, PIN_MISO);
 
     // MOSI = from adc to pico
-    sm_config_set_in_pins(&pio_cfg, PIN_MOSI);
+    sm_config_set_in_pins(&pio_cfg, PIN_MOSI0);
     sm_config_set_in_shift(&pio_cfg, false, true, 30);
-    pio_sm_set_consecutive_pindirs(pio, pio_sm, PIN_MOSI, 1, false);
-    pio_gpio_init(pio, PIN_MOSI);
+    pio_sm_set_consecutive_pindirs(pio, pio_sm, PIN_MOSI0, 3, false);
+    pio_gpio_init(pio, PIN_MOSI0);
+    pio_gpio_init(pio, PIN_MOSI1);
+    pio_gpio_init(pio, PIN_MOSI2);
 
     pio_sm_init(pio, pio_sm, pio_offset, &pio_cfg);
     pio_sm_set_enabled(pio, pio_sm, false); // stop untill mic_start() is called
@@ -73,7 +73,7 @@ void mic_init() {
 
     buf_a_is_front = true;
     // set dummy data
-    for(uint8_t i = 0; i < 2 * SOUND_DEPTH; ++i) {
+    for(uint16_t i = 0; i < 2 * SOUND_DEPTH; ++i) {
         buf_b[i] = 0;
     }
 }
@@ -94,7 +94,7 @@ void mic_swap_and_start() {
         &dma_cfg,          // configuration
         mic_back_buffer,   // initial write address
         &pio->rxf[pio_sm], // initial read address
-        2 * SOUND_DEPTH,   // number of transfers
+        MIC_BUF_LEN,       // number of transfers
         false              // true <=> start immediately
     );
 
@@ -112,28 +112,39 @@ void mic_wait_for_finish() {
 
 void mic_fill_sound_buf(void) {
     uint16_t r;
-    uint32_t data;
+    uint32_t data024, data135;
 
     uint8_t sw = sound_front;
     sw++;
-    sw %= SOUND_NUM_BUFS;
+    if (sw >= SOUND_NUM_BUFS)
+        sw = 0;
     uint16_t *sound_buf_write = sound_bufs[sw];
 
     for (uint16_t i = 0; i < SOUND_DEPTH; i++) {
         r = NUM_MIC_CHS * i;
+        sound_buf_write[r    ] = 0;
+        sound_buf_write[r + 1] = 0;
+        sound_buf_write[r + 2] = 0;
+        sound_buf_write[r + 3] = 0;
+        sound_buf_write[r + 4] = 0;
+        sound_buf_write[r + 5] = 0;
 
-        data = mic_front_buffer[2 * i + 1];
-        sound_buf_write[r + 0] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_write[r + 1] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_write[r + 2] = data & 0x3ff;
+        data024 = mic_front_buffer[2 * i    ];
+        data135 = mic_front_buffer[2 * i + 1];
+        for (uint8_t j = 0; j < 10; j++) {
+            sound_buf_write[r + 4] |= (data024 & 0b01) << j;
+            data024 >>= 1;
+            sound_buf_write[r + 2] |= (data024 & 0b01) << j;
+            data024 >>= 1;
+            sound_buf_write[r + 0] |= (data024 & 0b01) << j;
+            data024 >>= 1;
 
-        data = mic_front_buffer[2 * i];
-        sound_buf_write[r + 3] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_write[r + 4] = data & 0x3ff;
-        data >>= 10;
-        sound_buf_write[r + 5] = data & 0x3ff;
+            sound_buf_write[r + 5] |= (data135 & 0b01) << j;
+            data135 >>= 1;
+            sound_buf_write[r + 3] |= (data135 & 0b01) << j;
+            data135 >>= 1;
+            sound_buf_write[r + 1] |= (data135 & 0b01) << j;
+            data135 >>= 1;
+        }
     }
 }
